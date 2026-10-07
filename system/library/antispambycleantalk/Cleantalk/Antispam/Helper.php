@@ -580,7 +580,11 @@ class Helper
 					$curl_info = curl_getinfo($ch);
 					$result = $curl_info['http_code'];
 				}
-				curl_close($ch);
+                if (PHP_VERSION_ID < 80000) {
+                    curl_close($ch);
+                } else {
+                    unset($ch);
+                }
 				$out = $result;
 			}else
 				$out = array('error' => curl_error($ch));
