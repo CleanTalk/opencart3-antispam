@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?> 
+<?xml version="1.0" encoding="utf-8"?>
 <modification>
     <name>Antispam by Cleantalk</name>
-    <version>2.1</version>
+    <version>2.2</version>
     <author>Cleantalk Inc.</author>
     <link>https://cleantalk.org/</link>
     <code>antispambycleantalk</code>
@@ -68,7 +68,7 @@
     </file>
     <!-- Spam checking on affiliate/register, account/register -->
     <file path="catalog/controller/{{affiliate,account}/register.php}">
-        <operation> 
+        <operation>
             <search><![CDATA[return !$this->error;]]></search>
             <add position="before"><![CDATA[
             if (empty($this->error))
@@ -180,7 +180,7 @@
     </file>
     <!-- Spam checking on checkout/guest -->
     <file path="catalog/controller/checkout/guest.php">
-        <operation> 
+        <operation>
             <search><![CDATA[// Customer Group]]></search>
             <add position="before"><![CDATA[
             if (empty($json['error']))
@@ -192,7 +192,7 @@
                 }
             }
             ]]></add>
-        </operation>          
+        </operation>
     </file>
     <!-- Spam checking on product/product -->
     <file path="catalog/controller/product/product.php">

@@ -1,6 +1,4 @@
-# opencart-antispam
-Opencart anti-spam extension.
-# Version 2.1
+# Opencart Anti-Spam extension.
 
 If you find this project useful, please consider starring ⭐ it on GitHub — it helps us grow and support development!
 
