@@ -210,6 +210,11 @@ class CleantalkRequest
     public $referrer;
 
     /**
+     * @var int
+     */
+    public $event_token_enabled;
+
+    /**
      * Fill params with constructor
      *
      * @param array $params
@@ -265,5 +270,6 @@ class CleantalkRequest
 
         // Feedback
         $this->feedback = !empty($params['feedback']) ? $params['feedback'] : '';
+        $this->event_token_enabled = !empty($params['event_token_enabled']) ? $params['event_token_enabled'] : 0;
     }
 }
