@@ -186,7 +186,6 @@ class SFW
                         'ip'     => $current_ip,
                         'status' => 1,
                     );
-                    break;
                 } else {
                     $this->pass = false;
                     $this->blocked_ips[$origin] = array(
