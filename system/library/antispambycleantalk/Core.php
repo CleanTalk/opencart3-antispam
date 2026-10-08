@@ -231,8 +231,8 @@ class Core
         }
 
         $ct = new Cleantalk();
-        $ct->work_url = 'http://moderate.cleantalk.org';
-        $ct->server_url = 'http://moderate.cleantalk.org';
+        $ct->work_url = 'https://moderate.cleantalk.org';
+        $ct->server_url = 'https://moderate.cleantalk.org';
         $ct_request = new CleantalkRequest();
         $ct_request->auth_key = $this->ct_access_key;
         $ct_request->sender_ip       = Helper::ip__get(array('real'), false);
