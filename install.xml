@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?> 
+<?xml version="1.0" encoding="utf-8"?>
 <modification>
     <name>Antispam by Cleantalk</name>
-    <version>2.1</version>
+    <version>2.2</version>
     <author>Cleantalk Inc.</author>
     <link>https://cleantalk.org/</link>
     <code>antispambycleantalk</code>
@@ -68,7 +68,7 @@
     </file>
     <!-- Spam checking on affiliate/register, account/register -->
     <file path="catalog/controller/{{affiliate,account}/register.php}">
-        <operation> 
+        <operation>
             <search><![CDATA[return !$this->error;]]></search>
             <add position="before"><![CDATA[
             if (empty($this->error))
@@ -124,6 +124,31 @@
             ]]></add>
         </operation>
     </file>
+    <!-- Spam checking on checkout/simplecheckout.php -->
+    <file path="catalog/controller/checkout/simplecheckout.php">
+        <operation>
+            <search><![CDATA[$order_id = $this->order();]]></search>
+            <add position="replace"><![CDATA[]]></add>
+        </operation>
+        <operation>
+            <search><![CDATA[$stateChanged = $this->saveCustomerInfo();]]></search>
+            <add position="replace"><![CDATA[]]></add>
+        </operation>
+        <operation>
+            <search><![CDATA[if ($this->simplecheckout->getSettingValue('ignorePayment')) {]]></search>
+            <add position="before"><![CDATA[
+                if ($this->config->get('module_antispambycleantalk_status') && $this->config->get('module_antispambycleantalk_check_registrations'))
+                {
+                    if ( $this->apbct->is_spam( $this ) ) {
+                        // @ToDo implement blocking message output
+                    } else {
+                        $stateChanged = $this->saveCustomerInfo();
+                        $order_id = $this->order();
+                    }
+                }
+            ]]></add>
+        </operation>
+    </file>
     <!-- Spam checking on information/contact -->
     <file path="catalog/controller/information/contact.php">
         <operation>
@@ -155,7 +180,7 @@
     </file>
     <!-- Spam checking on checkout/guest -->
     <file path="catalog/controller/checkout/guest.php">
-        <operation> 
+        <operation>
             <search><![CDATA[// Customer Group]]></search>
             <add position="before"><![CDATA[
             if (empty($json['error']))
@@ -167,7 +192,7 @@
                 }
             }
             ]]></add>
-        </operation>          
+        </operation>
     </file>
     <!-- Spam checking on product/product -->
     <file path="catalog/controller/product/product.php">
@@ -196,6 +221,23 @@
                 {
                     if( $this->apbct->is_spam( $this ) )
                         $this->error['warning'] = $this->apbct->get_block_comment();
+                }
+            }
+            ]]></add>
+        </operation>
+    </file>
+    <!-- Spam checking on voucher.php -->
+    <file path="catalog/controller/account/voucher.php">
+        <operation>
+            <search><![CDATA[return !$this->error;]]></search>
+            <add position="before"><![CDATA[
+            if (empty($this->error))
+            {
+                if ($this->config->get('module_antispambycleantalk_status') && $this->config->get('module_antispambycleantalk_check_orders'))
+                {
+                    if( $this->apbct->is_spam( $this ) ) {
+                        $this->error['from_email'] = $this->apbct->get_block_comment();
+                    }
                 }
             }
             ]]></add>
@@ -234,6 +276,24 @@
             ]]></add>
         </operation>
     </file>
+    <!-- Form Builder Pro -->
+    <file path="catalog/controller/page/formpro.php">
+        <operation>
+            <search index="0"><![CDATA[if (!$json) {]]></search>
+            <add position="before"><![CDATA[
+            if (
+                ! $json &&
+                $this->config->get( 'module_antispambycleantalk_status' ) &&
+                $this->config->get( 'module_antispambycleantalk_check_contact_form' ) &&
+                $this->apbct->is_spam( $this )
+            ){
+                $json['error']['warning'] = $this->apbct->get_block_comment();
+                $this->response->addHeader('Content-Type: application/json');
+                $this->response->setOutput(json_encode($json));
+            }
+            ]]></add>
+        </operation>
+    </file>
     <!-- Spam checking on journal3/newsletter -->
     <file path="catalog/controller/journal3/newsletter.php">
         <operation>
@@ -250,6 +310,14 @@
     </file>
     <!-- Hidden fields -->
     <file path="catalog/view/theme/*/template/{{account,affiliate}/register.twig,account/return_form.twig,information/contact.twig}">
+        <operation>
+            <search index="0"><![CDATA[<form ]]></search>
+            <add position="after"><![CDATA[
+            <input type="hidden" name="ct_checkjs" id="ct_checkjs" value="0" />
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/account/voucher.twig">
         <operation>
             <search index="0"><![CDATA[<form ]]></search>
             <add position="after"><![CDATA[

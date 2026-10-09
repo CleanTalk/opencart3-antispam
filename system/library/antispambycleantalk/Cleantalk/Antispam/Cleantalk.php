@@ -250,7 +250,7 @@ class Cleantalk {
 
         // Using current server without changing it
         $result = !empty($this->work_url) && ($this->server_changed + $this->server_ttl > time())
-            ? $this->sendRequest($msg, $this->work_url, $this->server_timeout)
+            ? $this->sendRequest($this->work_url, $msg, $this->server_timeout)
             : false;
 
         // Changing server
@@ -268,14 +268,14 @@ class Cleantalk {
             // Loop until find work server
             foreach ($servers as $server) {
 
-                $dns = Helper::ip__resolve__cleantalks($server['ip']);
+                $dns = Helper::ipResolve($server['ip']);
                 if(!$dns)
                     continue;
 
                 $this->work_url = $url_protocol.$dns.$url_suffix;
                 $this->server_ttl = $server['ttl'];
 
-                $result = $this->sendRequest($msg, $this->work_url, $this->server_timeout);
+                $result = $this->sendRequest($this->work_url, $msg, $this->server_timeout);
 
                 if ($result !== false && $result->errno === 0) {
                     $this->server_change = true;
@@ -305,70 +305,65 @@ class Cleantalk {
      */
     public function get_servers_ip($host)
     {
-        if (!isset($host))
+        if ( ! isset($host) ) {
             return null;
+        }
 
         $servers = array();
 
         // Get DNS records about URL
-        if (function_exists('dns_get_record')) {
-            $records = dns_get_record($host, DNS_A);
-            if ($records !== FALSE) {
-                foreach ($records as $server) {
+        if ( function_exists('dns_get_record') ) {
+            $records = @dns_get_record($host, DNS_A);
+            if ( $records !== false ) {
+                foreach ( $records as $server ) {
                     $servers[] = $server;
                 }
             }
         }
 
         // Another try if first failed
-        if (count($servers) == 0 && function_exists('gethostbynamel')) {
+        if ( count($servers) === 0 && function_exists('gethostbynamel') ) {
             $records = gethostbynamel($host);
-            if ($records !== FALSE) {
-                foreach ($records as $server) {
+            if ( $records !== false ) {
+                foreach ( $records as $server ) {
                     $servers[] = array(
-                        "ip" => $server,
+                        "ip"   => $server,
                         "host" => $host,
-                        "ttl" => $this->server_ttl
+                        "ttl"  => $this->server_ttl
                     );
                 }
             }
         }
 
         // If couldn't get records
-        if (count($servers) == 0){
-
+        if ( count($servers) === 0 ) {
             $servers[] = array(
-                "ip" => null,
+                "ip"   => null,
                 "host" => $host,
-                "ttl" => $this->server_ttl
+                "ttl"  => $this->server_ttl
             );
-
-            // If records recieved
+            // If records received
         } else {
-
-            $tmp = null;
+            $tmp               = array();
             $fast_server_found = false;
 
-            foreach ($servers as $server) {
-
-                if ($fast_server_found) {
+            foreach ( $servers as $server ) {
+                if ( $fast_server_found ) {
                     $ping = $this->max_server_timeout;
                 } else {
                     $ping = $this->httpPing($server['ip']);
-                    $ping = $ping * 1000;
+                    $ping *= 1000;
                 }
 
-                $tmp[$ping] = $server;
+                $tmp[(int)$ping] = $server;
 
-                $fast_server_found = $ping < $this->min_server_timeout ? true : false;
-
+                $fast_server_found = $ping < $this->min_server_timeout;
             }
 
-            if (count($tmp)){
+            if ( count($tmp) ) {
                 ksort($tmp);
                 $response = $tmp;
             }
-
         }
 
         return empty($response) ? null : $response;
@@ -406,7 +401,7 @@ class Cleantalk {
      * @param $msg
      * @return boolean|CleantalkResponse
      */
-    private function sendRequest($data = null, $url, $server_timeout = 3)
+    private function sendRequest($url, $data = null, $server_timeout = 3)
     {
         $original_args = func_get_args();
         // Convert to array
@@ -461,11 +456,15 @@ class Cleantalk {
                 // Use SSL next time, if error occurs.
                 if(!$this->ssl_on){
                     $this->ssl_on = true;
-                    return $this->sendRequest($original_args[0], $original_args[1], $server_timeout);
+                    return $this->sendRequest($original_args[1], $original_args[0], $server_timeout);
                 }
             }
 
-            curl_close($ch);
+            if (PHP_VERSION_ID < 80000) {
+                curl_close($ch);
+            } else {
+                unset($ch);
+            }
         }
 
         if (!$result) {

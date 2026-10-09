@@ -10,7 +10,7 @@ use Cleantalk\Antispam\Helper;
 
 class Core
 {
-    const VERSION = '2.1';
+    const VERSION = '2.2';
 
     private $agent;
 
@@ -25,6 +25,14 @@ class Core
     private $comment = '';
 
     private static $instance;
+    /**
+     * @var RemoteCalls
+     */
+    public $rc;
+    /**
+     * @var SFW
+     */
+    public $sfw;
 
     /**
      * @param \Registry  $registry  Registry Object
@@ -88,26 +96,28 @@ class Core
 
     public function setCookie()
     {
-        // Cookie names to validate
-        $cookie_test_value = array(
-            'cookies_names' => array(),
-            'check_value' => $this->ct_access_key,
-        );
-        // Pervious referer
-        if(!empty($_SERVER['HTTP_REFERER'])){
-            Helper::apbct_cookie__set('apbct_prev_referer', $_SERVER['HTTP_REFERER'], 0, '/');
-            $cookie_test_value['cookies_names'][] = 'apbct_prev_referer';
-            $cookie_test_value['check_value'] .= $_SERVER['HTTP_REFERER'];
-        }
-        // Submit time
-        $apbct_timestamp = time();
-        Helper::apbct_cookie__set('apbct_timestamp', $apbct_timestamp, 0, '/');
-        $cookie_test_value['cookies_names'][] = 'apbct_timestamp';
-        $cookie_test_value['check_value'] .= $apbct_timestamp;
+        if (!headers_sent()) {
+            // Cookie names to validate
+            $cookie_test_value = array(
+                'cookies_names' => array(),
+                'check_value' => $this->ct_access_key,
+            );
+            // Pervious referer
+            if(!empty($_SERVER['HTTP_REFERER'])){
+                Helper::apbct_cookie__set('apbct_prev_referer', $_SERVER['HTTP_REFERER'], 0, '/');
+                $cookie_test_value['cookies_names'][] = 'apbct_prev_referer';
+                $cookie_test_value['check_value'] .= $_SERVER['HTTP_REFERER'];
+            }
+            // Submit time
+            $apbct_timestamp = time();
+            Helper::apbct_cookie__set('apbct_timestamp', $apbct_timestamp, 0, '/');
+            $cookie_test_value['cookies_names'][] = 'apbct_timestamp';
+            $cookie_test_value['check_value'] .= $apbct_timestamp;
 
-        // Cookies test
-        $cookie_test_value['check_value'] = md5($cookie_test_value['check_value']);
-        Helper::apbct_cookie__set('apbct_cookies_test', json_encode($cookie_test_value), 0, '/');
+            // Cookies test
+            $cookie_test_value['check_value'] = md5($cookie_test_value['check_value']);
+            Helper::apbct_cookie__set('apbct_cookies_test', json_encode($cookie_test_value), 0, '/');
+        }
     }
 
     public function apbctCookiesTest()
@@ -158,6 +168,10 @@ class Core
             case 'ControllerInformationContact' :
                 $ct_result = $this->onSpamCheck( 'contact', $controller->request->post );
                 break;
+            // Form Builder Pro
+            case 'ControllerPageFormPro' :
+                $ct_result = $this->onSpamCheck( 'contact_form__opencart3__form_builder_pro', $controller->request->post['field'] );
+                break;
             case 'ControllerJournal3Form'       :
                 $ct_result = $this->onSpamCheck( 'general_comment', $controller->request->post['item'] );
                 break;
@@ -206,12 +220,19 @@ class Core
             'comment_type' => $content_type,
             'post_url' => isset($_SERVER['HTTP_REFERER']) ? htmlspecialchars($_SERVER['HTTP_REFERER']) : null,
         ));
+
+        // JS check
         $js_on = 0;
-        if (isset($_POST['ct_checkjs']) && $_POST['ct_checkjs'] == date("Y"))
+        if (
+            ( isset($_POST['ct_checkjs']) && $_POST['ct_checkjs'] == date("Y") ) ||
+            $content_type === 'contact_form__opencart3__form_builder_pro' // Hard fix for Form Builder Pro
+        ){
             $js_on = 1;
+        }
+
         $ct = new Cleantalk();
-        $ct->work_url = 'http://moderate.cleantalk.org';
-        $ct->server_url = 'http://moderate.cleantalk.org';
+        $ct->work_url = 'https://moderate.cleantalk.org';
+        $ct->server_url = 'https://moderate.cleantalk.org';
         $ct_request = new CleantalkRequest();
         $ct_request->auth_key = $this->ct_access_key;
         $ct_request->sender_ip       = Helper::ip__get(array('real'), false);
@@ -232,12 +253,19 @@ class Core
             case 'order':
                 $ct_request->sender_email = $data['email'];
                 $ct_request->sender_nickname = trim($data['firstname']).' '.trim($data['lastname']);
-                $ct_result = $ct->isAllowUser($ct_request);
+                $ct_result = $ct->isAllowMessage($ct_request);
                 break;
             case 'contact':
                 $ct_request->sender_email = $data['email'];
                 $ct_request->sender_nickname = trim($data['name']);
                 $ct_request->message = trim($data['enquiry']);
+                $ct_result = $ct->isAllowMessage($ct_request);
+                break;
+            case 'contact_form__opencart3__form_builder_pro' :
+                $fields = $this->get_fields_any( $data );
+                $ct_request->sender_email    = ($fields['email']    ? $fields['email']    : '');
+                $ct_request->sender_nickname = ($fields['nickname'] ? $fields['nickname'] : '');
+                $ct_request->message         = ($fields['message']  ? implode( "\n\n", $fields['message'] )  : '');
                 $ct_result = $ct->isAllowMessage($ct_request);
                 break;
             case 'comment':

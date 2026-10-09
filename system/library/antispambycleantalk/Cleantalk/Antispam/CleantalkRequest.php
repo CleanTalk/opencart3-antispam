@@ -4,121 +4,128 @@ namespace Cleantalk\Antispam;
 
 /**
  * Request class
+ * @psalm-suppress PossiblyUnusedProperty
  */
-class CleantalkRequest {
-
-     /**
+class CleantalkRequest
+{
+    /**
      *  All http request headers
      * @var string
      */
-     public $all_headers = null;
-     
-     /**
+    public $all_headers;
+
+    /**
      *  IP address of connection
      * @var string
      */
-     //public $remote_addr = null;
-     
-     /**
+
+    /**
      *  Last error number
      * @var integer
      */
-     public $last_error_no = null;
-     
-     /**
+    public $last_error_no;
+
+    /**
      *  Last error time
      * @var integer
      */
-     public $last_error_time = null;
-     
-     /**
+    public $last_error_time;
+
+    /**
      *  Last error text
      * @var string
      */
-     public $last_error_text = null;
+    public $last_error_text;
 
     /**
      * User message
      * @var string
      */
-    public $message = null;
+    public $message;
 
     /**
      * Post example with last comments
      * @var string
      */
-    public $example = null;
+    public $example;
 
     /**
      * Auth key
      * @var string
      */
-    public $auth_key = null;
+    public $auth_key;
 
     /**
      * Engine
      * @var string
      */
-    public $agent = null;
+    public $agent;
 
     /**
      * Is check for stoplist,
      * valid are 0|1
      * @var int
      */
-    public $stoplist_check = null;
+    public $stoplist_check;
 
     /**
      * Language server response,
      * valid are 'en' or 'ru'
      * @var string
      */
-    public $response_lang = null;
+    public $response_lang;
 
     /**
      * User IP
-     * @var strings
+     * @var string
      */
-    public $sender_ip = null;
+    public $sender_ip;
 
     /**
      * User email
-     * @var strings
+     * @var string
      */
-    public $sender_email = null;
+    public $sender_email;
 
     /**
      * User nickname
      * @var string
      */
-    public $sender_nickname = null;
+    public $sender_nickname;
 
     /**
      * Sender info JSON string
      * @var string
      */
-    public $sender_info = null;
+    public $sender_info;
 
     /**
      * Post info JSON string
      * @var string
      */
-    public $post_info = null;
+    public $post_info;
 
     /**
      * Is allow links, email and icq,
      * valid are 1|0
      * @var int
      */
-    public $allow_links = null;
+    public $allow_links;
 
     /**
      * Time form filling
      * @var int
      */
-    public $submit_time = null;
-    
+    public $submit_time;
+
+    /**
+     * @var string|null
+     */
     public $x_forwarded_for = '';
+
+    /**
+     * @var string|null
+     */
     public $x_real_ip = '';
 
     /**
@@ -130,43 +137,139 @@ class CleantalkRequest {
      *  1 - JS enabled at the client broswer
      * @var int
      */
-    public $js_on = null;
+    public $js_on;
 
     /**
      * user time zone
      * @var string
      */
-    public $tz = null;
+    public $tz;
 
     /**
      * Feedback string,
      * valid are 'requset_id:(1|0)'
      * @var string
      */
-    public $feedback = null;
+    public $feedback;
 
     /**
      * Phone number
-     * @var type 
+     * @var string
      */
-    public $phone = null;
-    
+    public $phone;
+
     /**
-    * Method name
-    * @var string
-    */
-    public $method_name = 'check_message'; 
+     * Method name
+     * @var string
+     */
+    public $method_name = 'check_message';
+
+    /**
+     * @var int|null
+     */
+    public $honeypot_field;
+
+    /**
+     * @var int|null
+     */
+    public $exception_action;
+
+    /**
+     * @var string|null
+     */
+    public $event_token;
+
+    /**
+     * @var string|null
+     */
+    public $event_javascript_data;
+
+    /**
+     * @var string|null
+     */
+    public $browser_sign;
+
+    /**
+     * @var string|null
+     */
+    public $event_type;
+
+    /**
+     * @var string|null
+     */
+    public $message_to_log;
+
+    /**
+     * @var string|null
+     */
+    public $page_url;
+
+    /**
+     * @var string|null
+     */
+    public $referrer;
+
+    /**
+     * @var int
+     */
+    public $event_token_enabled;
 
     /**
      * Fill params with constructor
-     * @param type $params
+     *
+     * @param array $params
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     * @psalm-suppress InvalidPropertyAssignmentValue
      */
-    public function __construct($params = null) {
-        if (is_array($params) && count($params) > 0) {
-            foreach ($params as $param => $value) {
-                $this->{$param} = $value;
-            }
-        }
-    }
+    public function __construct($params = null)
+    {
+        // IPs
+        $this->sender_ip = isset($params['sender_ip']) ? (string)$params['sender_ip'] : null;
+        $this->x_forwarded_for = isset($params['x_forwarded_for']) ? (string)$params['x_forwarded_for'] : null;
+        $this->x_real_ip = isset($params['x_real_ip']) ? (string)$params['x_real_ip'] : null;
 
+        // Misc
+        $this->agent = isset($params['agent']) ? (string)$params['agent'] : null;
+        $this->auth_key = isset($params['auth_key']) ? (string)$params['auth_key'] : null;
+        $this->sender_email = isset($params['sender_email']) ? (string)$params['sender_email'] : null;
+
+        // crunch for "PHP Notice:  Array to string conversion". Error appears only on Gravity forms
+        // @todo fix gat_fields_any
+        if ( isset($params['sender_nickname']) && is_array($params['sender_nickname']) ) {
+            $params['sender_nickname'] = current($params['sender_nickname']);
+        }
+
+        $this->page_url = !empty($params['page_url']) ? (string)$params['page_url'] : null;
+        $this->referrer = !empty($params['referrer']) ? (string)$params['referrer'] : null;
+        $this->sender_nickname = !empty($params['sender_nickname']) ? (string)$params['sender_nickname'] : null;
+        $this->phone = !empty($params['phone']) ? (string)$params['phone'] : null;
+        $this->js_on = isset($params['js_on']) ? (int)$params['js_on'] : null;
+        $this->submit_time = isset($params['submit_time']) ? (int)$params['submit_time'] : null;
+        $this->post_info = isset($params['post_info']) ? (string)json_encode($params['post_info']) : null;
+        $this->sender_info = isset($params['sender_info']) ? (string)json_encode($params['sender_info']) : null;
+        $this->honeypot_field = isset($params['honeypot_field']) ? (int)$params['honeypot_field'] : null;
+        $this->exception_action = isset($params['exception_action']) ? (int)$params['exception_action'] : null;
+
+        $this->event_token = isset($params['event_token']) ? (string)$params['event_token'] : null;
+        $this->event_javascript_data = isset($params['event_javascript_data']) ? (string)$params['event_javascript_data'] : null;
+        $this->browser_sign = isset($params['browser_sign']) ? (string)$params['browser_sign'] : null;
+        $this->event_type = isset($params['event_type']) ? (string)$params['event_type'] : null;
+        $this->message_to_log = isset($params['message_to_log']) ? (string)$params['message_to_log'] : null;
+
+        $this->message = !empty($params['message'])
+            ? (!is_scalar($params['message'])
+                ? serialize($params['message'])
+                : $params['message'])
+            : '';
+        $this->example = !empty($params['example'])
+            ? (!is_scalar($params['example'])
+                ? serialize($params['example'])
+                : $params['example'])
+            : '';
+
+        // Feedback
+        $this->feedback = !empty($params['feedback']) ? $params['feedback'] : '';
+        $this->event_token_enabled = !empty($params['event_token_enabled']) ? $params['event_token_enabled'] : 0;
+    }
 }

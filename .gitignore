@@ -4,6 +4,8 @@
 !/install.xml
 !/README.md
 !/build_release.sh
+!.github/workflows/releaseNotice.yml
+!.github/workflows/reviewNotice.yml
 
 !/admin/controller/extension/module/antispambycleantalk.php
 !/admin/language/**/extension/module/antispambycleantalk.php
